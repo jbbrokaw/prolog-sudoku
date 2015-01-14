@@ -1,4 +1,4 @@
-lpresent([],_).
+lpresent([],[]).
 lpresent([Digit|Others], List):- member(Digit, List),
 	select(Digit, List, NewList),
 	lpresent(Others, NewList).
