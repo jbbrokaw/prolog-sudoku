@@ -1,3 +1,5 @@
+ensure_loaded(sudoku).
+
 ppValue(10, _).
 ppValue(N, Row):-
 	row(N, Row, Val),

@@ -80,4 +80,4 @@ blocksValid(N, Board):-
 solved(Board):-
 	rowsValid(9, Board),
 	columnsValid(9, Board),
-	blocksValid(9, Board).
+	blocksValid(9, Board), !.
