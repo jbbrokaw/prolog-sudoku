@@ -40,3 +40,47 @@ possibilities(Board, RowNum, ColumnNum, Possibilities):-
 	intersection(RCPoss, BlockPossibilities, Possibilities), !.
 
 
+/* The "obvious" fill-ins are the ones with only one possibility, do those
+below */
+
+filledObviousRows(10, _).
+filledObviousRows(RowNum, Board):-
+	filledObviousColumns(RowNum, 1, Board),
+	N is RowNum + 1,
+	filledObviousRows(N, Board).
+
+filledObviousColumns(_, 10, _).
+filledObviousColumns(RowNum, ColNum, Board):-
+	row(RowNum, Board, Row),
+	row(ColNum, Row, Value),
+	nonvar(Value),
+	N is ColNum + 1,
+	filledObviousColumns(RowNum, N, Board).
+
+filledObviousColumns(RowNum, ColNum, Board):-
+	possibilities(Board, RowNum, ColNum, Possibilities),
+	length(Possibilities, X),
+	X > 1,
+	N is ColNum + 1,
+	filledObviousColumns(RowNum, N, Board).
+
+filledObviousColumns(RowNum, ColNum, Board):-
+	possibilities(Board, RowNum, ColNum, Possibilities),
+	length(Possibilities, 1),
+	row(RowNum, Board, Row),
+	row(ColNum, Row, Value),
+	member(Value, Possibilities),
+	N is ColNum + 1,
+	filledObviousColumns(RowNum, N, Board).
+
+filledObvious(Board):-
+	filledObviousRows(1, Board).
+
+
+
+
+
+
+
+
+
