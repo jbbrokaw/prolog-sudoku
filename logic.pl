@@ -24,6 +24,12 @@ blockNum(N, RowNum, ColumnNum):-
 
 possibilities(Board, RowNum, ColumnNum, Possibilities):-
 	row(RowNum, Board, Row),
+	row(ColumnNum, Row, Value),
+	nonvar(Value),
+	append([Value],[],Possibilities), !.
+
+possibilities(Board, RowNum, ColumnNum, Possibilities):-
+	row(RowNum, Board, Row),
 	complement(Row, RowPossibilities),
 	column(ColumnNum, Board, Column),
 	complement(Column, ColumnPossibilities),
@@ -31,4 +37,6 @@ possibilities(Board, RowNum, ColumnNum, Possibilities):-
 	block(BlockNum, Board, Block),
 	complement(Block, BlockPossibilities),
 	intersection(RowPossibilities, ColumnPossibilities, RCPoss),
-	intersection(RCPoss, BlockPossibilities, Possibilities).
+	intersection(RCPoss, BlockPossibilities, Possibilities), !.
+
+
