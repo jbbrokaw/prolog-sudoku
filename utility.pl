@@ -48,5 +48,5 @@ ppRow(N, Board):-
 	N2 is N + 1,
 	ppRow(N2, Board).
 
-pp(Board):- ppRow(1, Board), writef('\n\n', []).
+pp(Board):- ppRow(1, Board), !, writef('\n\n', []).
 

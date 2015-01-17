@@ -46,7 +46,7 @@ possibilities(Board, RowNum, ColumnNum, Possibilities):-
 filledObviousRows(10, _).
 filledObviousRows(RowNum, Board):-
 	filledObviousColumns(RowNum, 1, Board),
-	N is RowNum + 1,
+	N is RowNum + 1, !,
 	filledObviousRows(N, Board).
 
 filledObviousColumns(_, 10, _).
@@ -54,14 +54,14 @@ filledObviousColumns(RowNum, ColNum, Board):-
 	row(RowNum, Board, Row),
 	row(ColNum, Row, Value),
 	nonvar(Value),
-	N is ColNum + 1,
+	N is ColNum + 1, !,
 	filledObviousColumns(RowNum, N, Board).
 
 filledObviousColumns(RowNum, ColNum, Board):-
 	possibilities(Board, RowNum, ColNum, Possibilities),
 	length(Possibilities, X),
 	X > 1,
-	N is ColNum + 1,
+	N is ColNum + 1, !,
 	filledObviousColumns(RowNum, N, Board).
 
 filledObviousColumns(RowNum, ColNum, Board):-
@@ -70,7 +70,7 @@ filledObviousColumns(RowNum, ColNum, Board):-
 	row(RowNum, Board, Row),
 	row(ColNum, Row, Value),
 	member(Value, Possibilities),
-	N is ColNum + 1,
+	N is ColNum + 1, !,
 	filledObviousColumns(RowNum, N, Board).
 
 filledObvious(Board):-
@@ -147,14 +147,19 @@ potentialPositions(X, [_|OtherPossibilities], Positions):-
 /* An "Element" is a row, column, or block (as a list of numbers); these cycle through needed numbers
 for each element looking for constraints to enforce*/
 enforcedConstraints([], _, _, _).
+enforcedConstraints([NumberToPlace|_], PossArray, ElementNum, _):-
+	potentialPositions(NumberToPlace, PossArray, Positions),
+	length(Positions, 0), !,
+	writef('There is nowhere for %w to go in Element %w\n',
+	       [NumberToPlace, ElementNum]),
+	fail.
 enforcedConstraints([NumberToPlace|Rest], PossArray, ElementNum, Element):-
 	potentialPositions(NumberToPlace, PossArray, Positions),
 	length(Positions, 1),
-	nth0(0, Positions, Position),
-	P0 is Position - 1,
-	nth0(P0, Element, NumberToPlace),
+	row(1, Positions, Position),
+	row(Position, Element, NumberToPlace), !,
 	enforcedConstraints(Rest, PossArray, ElementNum, Element).
-enforcedConstraints([_|Rest], PossArray, ElementNum, Element):-
+enforcedConstraints([_|Rest], PossArray, ElementNum, Element):- !,
 	enforcedConstraints(Rest, PossArray, ElementNum, Element).
 
 /* Now cycle through rows, columns, and blocks enforcing these "constraints" */
@@ -164,7 +169,7 @@ constrainedRows(RowNum, Board, PossArray):-
 	complement(Row, Needed),
 	row(RowNum, PossArray, RowPossibilities),
 	enforcedConstraints(Needed, RowPossibilities, RowNum, Row),
-	R2 is RowNum + 1,
+	R2 is RowNum + 1, !,
 	constrainedRows(R2, Board, PossArray).
 
 constrainedRows(Board):-
@@ -177,7 +182,7 @@ constrainedColumns(ColNum, Board, PossArray):-
 	complement(Column, Needed),
 	column(ColNum, PossArray, ColPossibilities),
 	enforcedConstraints(Needed, ColPossibilities, ColNum, Column),
-	C2 is ColNum + 1,
+	C2 is ColNum + 1, !,
 	constrainedColumns(C2, Board, PossArray).
 
 constrainedColumns(Board):-
@@ -191,7 +196,7 @@ constrainedBlocks(BlockNum, Board, PossArray):-
 	complement(Block, Needed),
 	block(BlockNum, PossArray, BlockPossibilities),
 	enforcedConstraints(Needed, BlockPossibilities, BlockNum, Block),
-	B2 is BlockNum + 1,
+	B2 is BlockNum + 1, !,
 	constrainedBlocks(B2, Board, PossArray).
 
 constrainedBlocks(Board):-
@@ -217,7 +222,9 @@ cycledLogic(Board, 0):-
 cycledLogic(Board, N):-
 	numUnknown(Board, NumOrig),
 	writef("Beginning round, Unknowns: %w\n", [NumOrig]),
+	buildPossibilities(Board, PossArray),
 	pp(Board),
+	pp(PossArray),
 	N > 0,
 	cycledObvious(Board, 1), !,
 	constrainedRows(Board), !,
@@ -225,12 +232,62 @@ cycledLogic(Board, N):-
 	constrainedBlocks(Board), !,
 	numUnknown(Board, NumNew),
 	Change is NumOrig - NumNew,
-	cycledLogic(Board, Change).
+	cycledLogic(Board, Change), !.
 
-cycledLogic(Board):- cycledLogic(Board, 1).
+cycledLogic(Board):- cycledLogic(Board, 1), !.
 
 /* What to do if we're stuck? Find an option & guess, but go logically from there
 (Probably solved(Board) is still too inefficient) */
+
+guessable(Board, RowNum, ColNum):-
+	buildPossibilities(Board, PossArray),
+	nth0(RN, PossArray, PossRow),
+	nth0(CN, PossRow, Poss),
+	length(Poss, 2),
+	RowNum is RN + 1,
+	ColNum is CN + 1.
+
+notBrokenCol(10, _).
+notBrokenCol(N, PossRow):-
+	row(N, PossRow, Possibilities),
+	length(Possibilities, NumPoss), !,
+	NumPoss > 0,
+	N2 is N + 1,
+	notBrokenCol(N2, PossRow).
+
+notBrokenRow(10, _).
+notBrokenRow(N, PossArray):-
+	row(N, PossArray, PossRow),
+	notBrokenCol(1, PossRow),
+	N2 is N + 1,
+	notBrokenRow(N2, PossArray).
+
+notBroken(Board):-
+	buildPossibilities(Board, PossArray),
+	notBrokenRow(1, PossArray).
+
+guessed(Board):-
+	buildPossibilities(Board, PossArray),
+	guessable(Board, RowNum, ColNum),
+	row(RowNum, PossArray, PossRow),
+	row(ColNum, PossRow, Guesses),
+	row(RowNum, Board, Row),
+	row(ColNum, Row, Value),
+	writef("Guessing at (%w, %w)\n", [RowNum, ColNum]),
+	member(Value, Guesses),
+	pp(Board),
+	buildPossibilities(Board, NewPossArray),
+	pp(NewPossArray).
+
+logicWithGuesses(Board):-
+	numUnknown(Board, 0).
+logicWithGuesses(Board):-
+	cycledLogic(Board),
+	numUnknown(Board, N),
+	N > 0,
+	guessed(Board),
+	logicWithGuesses(Board).
+
 
 
 
