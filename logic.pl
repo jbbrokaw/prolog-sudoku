@@ -244,6 +244,8 @@ guessable(Board, RowNum, ColNum):-
 	nth0(RN, PossArray, PossRow),
 	nth0(CN, PossRow, Poss),
 	length(Poss, 2),
+/* This might make it unable to solve some solvable puzzles,
+maybe add another option if no such cell exists */
 	RowNum is RN + 1,
 	ColNum is CN + 1.
 
@@ -280,6 +282,9 @@ guessed(Board):-
 	pp(NewPossArray).*/
 
 logicWithGuesses(Board):-
+	numUnknown(Board, 0).
+logicWithGuesses(Board):-
+	cycledLogic(Board),
 	numUnknown(Board, 0).
 logicWithGuesses(Board):-
 	cycledLogic(Board),

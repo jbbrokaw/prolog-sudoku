@@ -21,10 +21,17 @@ unsolvedBoard(X):-
 
 Then, to solve
 
-```
+```prolog
 unsolvedBoard(X), solved(X).
 ```
 
-Its performance is rather bad, but it's well under 100 lines of code!
+Its performance is incredibly bad, but it's well under 100 lines of code!
 
-MIT Licence etc.
+To be a little more logical and efficient, `logic.pl` has a lot of code solving it more like a human.
+To solve in a reasonable amount of time:
+
+```prolog
+unsolvedBoard(X), logicWithGuesses(X).
+```
+
+MIT Licence.
