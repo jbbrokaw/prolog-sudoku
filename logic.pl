@@ -31,12 +31,12 @@ possibilities(Board, RowNum, ColumnNum, Possibilities):-
 
 possibilities(Board, RowNum, ColumnNum, Possibilities):-
 	row(RowNum, Board, Row),
-	complement(Row, RowPossibilities),
+	complement(Row, RowPossibilities), !,
 	column(ColumnNum, Board, Column),
-	complement(Column, ColumnPossibilities),
+	complement(Column, ColumnPossibilities), !,
 	blockNum(BlockNum, RowNum, ColumnNum),
 	block(BlockNum, Board, Block),
-	complement(Block, BlockPossibilities),
+	complement(Block, BlockPossibilities), !,
 	intersection(RowPossibilities, ColumnPossibilities, RCPoss),
 	intersection(RCPoss, BlockPossibilities, Possibilities), !.
 
@@ -120,13 +120,13 @@ rather than determining possibilities for each item */
 rowPossibilities(_, 10, _, []).
 
 rowPossibilities(RowNum, ColNum, Board, [Possibilities|OtherPossibilities]):-
-	C2 is ColNum + 1,
-	rowPossibilities(RowNum, C2, Board, OtherPossibilities),
+	C2 is ColNum + 1, !,
+	rowPossibilities(RowNum, C2, Board, OtherPossibilities), !,
 	possibilities(Board, RowNum, ColNum, Possibilities).
 
 buildPossibilities(10, _, []).
 buildPossibilities(RowNum, Board, [RowPossibilities|RestOfPossibilities]):-
-	R2 is RowNum + 1,
+	R2 is RowNum + 1, !,
 	buildPossibilities(R2, Board, RestOfPossibilities),
 	rowPossibilities(RowNum, 1, Board, RowPossibilities),
 	length(RowPossibilities, 9), !.
@@ -139,10 +139,10 @@ potentialPositions(_, [], []):- !.
 potentialPositions(X, [Possibilities|OtherPossibilities], [Position|P2]):-
 	member(X, Possibilities),
 	length(OtherPossibilities, N),
-	Position is 9 - N,
-	potentialPositions(X, OtherPossibilities, P2), !.
-potentialPositions(X, [_|OtherPossibilities], Positions):-
-	potentialPositions(X, OtherPossibilities, Positions), !. /*Not a member */
+	Position is 9 - N, !,
+	potentialPositions(X, OtherPossibilities, P2).
+potentialPositions(X, [_|OtherPossibilities], Positions):- !,
+	potentialPositions(X, OtherPossibilities, Positions). /*Not a member */
 
 /* An "Element" is a row, column, or block (as a list of numbers); these cycle through needed numbers
 for each element looking for constraints to enforce*/
@@ -167,7 +167,7 @@ constrainedRows(10, _, _).
 constrainedRows(RowNum, Board, PossArray):-
 	row(RowNum, Board, Row),
 	complement(Row, Needed),
-	row(RowNum, PossArray, RowPossibilities),
+	row(RowNum, PossArray, RowPossibilities), !,
 	enforcedConstraints(Needed, RowPossibilities, RowNum, Row),
 	R2 is RowNum + 1, !,
 	constrainedRows(R2, Board, PossArray).
@@ -180,7 +180,7 @@ constrainedColumns(10, _, _).
 constrainedColumns(ColNum, Board, PossArray):-
 	column(ColNum, Board, Column),
 	complement(Column, Needed),
-	column(ColNum, PossArray, ColPossibilities),
+	column(ColNum, PossArray, ColPossibilities), !,
 	enforcedConstraints(Needed, ColPossibilities, ColNum, Column),
 	C2 is ColNum + 1, !,
 	constrainedColumns(C2, Board, PossArray).
@@ -194,7 +194,7 @@ constrainedBlocks(10, _, _).
 constrainedBlocks(BlockNum, Board, PossArray):-
 	block(BlockNum, Board, Block),
 	complement(Block, Needed),
-	block(BlockNum, PossArray, BlockPossibilities),
+	block(BlockNum, PossArray, BlockPossibilities), !,
 	enforcedConstraints(Needed, BlockPossibilities, BlockNum, Block),
 	B2 is BlockNum + 1, !,
 	constrainedBlocks(B2, Board, PossArray).
@@ -214,17 +214,17 @@ cycledLogic(Board, _):-
 cycledLogic(Board, 0):-
 	writef("We are stuck.\n", []),
 	numUnknown(Board, Unk),
-	writef("Number of unknowns: %w\n", [Unk]),
-	buildPossibilities(Board, PossArray),
+	writef("Number of unknowns: %w\n", [Unk]).
+	/*buildPossibilities(Board, PossArray),
 	pp(Board),
-	pp(PossArray).
+	pp(PossArray).*/
 
 cycledLogic(Board, N):-
 	numUnknown(Board, NumOrig),
 	writef("Beginning round, Unknowns: %w\n", [NumOrig]),
-	buildPossibilities(Board, PossArray),
+	/*buildPossibilities(Board, PossArray),
 	pp(Board),
-	pp(PossArray),
+	pp(PossArray),*/
 	N > 0,
 	cycledObvious(Board, 1), !,
 	constrainedRows(Board), !,
@@ -273,11 +273,11 @@ guessed(Board):-
 	row(ColNum, PossRow, Guesses),
 	row(RowNum, Board, Row),
 	row(ColNum, Row, Value),
-	writef("Guessing at (%w, %w)\n", [RowNum, ColNum]),
 	member(Value, Guesses),
-	pp(Board),
+	writef("Guessing %w at (%w, %w)\n", [Value, RowNum, ColNum]).
+	/*pp(Board),
 	buildPossibilities(Board, NewPossArray),
-	pp(NewPossArray).
+	pp(NewPossArray).*/
 
 logicWithGuesses(Board):-
 	numUnknown(Board, 0).
